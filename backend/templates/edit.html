@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduTrack — {{ student.name }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #0d0d0d;
+      --paper: #f5f2eb;
+      --cream: #ede9df;
+      --accent: #c8f135;
+      --accent-dark: #9abf1e;
+      --muted: #8a8678;
+      --border: #d4cfc3;
+      --card: #ffffff;
+      --danger: #ff4444;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--paper); color: var(--ink);
+      min-height: 100vh; overflow-x: hidden;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.4;
+    }
+
+    header {
+      padding: 2rem 3rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--paper); position: sticky; top: 0; z-index: 100;
+    }
+
+    .logo { display: flex; align-items: center; gap: 12px; }
+
+    .logo-mark {
+      width: 38px; height: 38px; background: var(--ink);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.3rem; letter-spacing: -0.03em;
+    }
+
+    .logo-text span { color: var(--accent-dark); }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+
+    .header-badge {
+      font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      background: var(--accent); color: var(--ink);
+      padding: 6px 14px; border-radius: 100px;
+    }
+
+    .signout-link {
+      font-size: 0.75rem; color: var(--muted);
+      text-decoration: none; letter-spacing: 0.06em; transition: color 0.2s;
+    }
+
+    .signout-link:hover { color: var(--ink); }
+
+    main {
+      max-width: 1100px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+      position: relative; z-index: 1;
+    }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 2rem; font-size: 0.78rem; color: var(--muted);
+    }
+
+    .breadcrumb a {
+      color: var(--muted); text-decoration: none; transition: color 0.2s;
+    }
+
+    .breadcrumb a:hover { color: var(--ink); }
+
+    /* ── HERO ── */
+    .student-hero {
+      display: flex; align-items: center; gap: 1.5rem;
+      margin-bottom: 2.5rem;
+      animation: slideUp 0.4s ease both;
+    }
+
+    .hero-avatar {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: var(--ink); color: var(--accent);
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .hero-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1;
+    }
+
+    .hero-meta {
+      font-size: 0.75rem; color: var(--muted);
+      letter-spacing: 0.06em; margin-top: 5px;
+    }
+
+    /* ── FLASH ── */
+    .flash {
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 0.82rem; margin-bottom: 1.5rem; border: 1px solid;
+    }
+
+    .flash.success { background: #f0ffe0; border-color: #b5e87a; color: #3a6e00; }
+    .flash.error   { background: #fff0f0; border-color: #ffaaaa; color: #a00000; }
+
+    /* ── GRID ── */
+    .edit-grid {
+      display: grid; grid-template-columns: 370px 1fr;
+      gap: 2rem; align-items: start;
+    }
+
+    /* ── LEFT PANEL ── */
+    .edit-panel {
+      background: var(--ink); color: var(--paper);
+      border-radius: var(--radius); padding: 2.5rem;
+      position: sticky; top: 90px;
+      animation: slideUp 0.4s 0.05s ease both;
+    }
+
+    .section-label {
+      font-size: 0.65rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: #555;
+      margin-top: 1.8rem; margin-bottom: 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .section-label:first-of-type { margin-top: 0; }
+
+    .form-group { margin-bottom: 1rem; }
+
+    .form-label {
+      display: block; font-size: 0.68rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #777; margin-bottom: 7px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; padding: 11px 14px;
+      color: var(--paper);
+      font-family: 'DM Mono', monospace; font-size: 0.88rem;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+    }
+
+    .form-input::placeholder { color: #555; }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      background: rgba(200,241,53,0.05);
+    }
+
+    /* attendance */
+    .att-row { display: flex; align-items: center; gap: 12px; }
+
+    .att-number { width: 75px; flex-shrink: 0; text-align: center; }
+
+    .att-bar-wrap {
+      flex: 1; height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 100px; overflow: hidden;
+    }
+
+    .att-bar-fill { height: 100%; border-radius: 100px; transition: width 0.3s, background 0.3s; }
+
+    .att-pct { font-size: 0.8rem; min-width: 38px; text-align: right; }
+
+    .save-btn {
+      width: 100%; background: var(--accent); color: var(--ink);
+      border: none; border-radius: 10px; padding: 13px;
+      font-family: 'Syne', sans-serif; font-size: 0.95rem;
+      font-weight: 700; cursor: pointer; margin-top: 2rem;
+      transition: transform 0.15s, background 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    .save-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .save-btn:active { transform: translateY(0); }
+
+    /* ── RIGHT COL ── */
+    .right-col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* overview stats */
+    .overview-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      animation: slideUp 0.4s 0.1s ease both;
+    }
+
+    .overview-stat {
+      background: var(--card); padding: 1.5rem 1.8rem;
+      display: flex; flex-direction: column; gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .overview-stat:hover { background: var(--cream); }
+
+    .ov-label {
+      font-size: 0.68rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    .ov-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem; font-weight: 800;
+      letter-spacing: -0.04em; line-height: 1;
+    }
+
+    .status-chip {
+      display: inline-flex; align-items: center;
+      border-radius: 100px; padding: 4px 12px;
+      font-size: 0.72rem; font-family: 'DM Mono', monospace;
+    }
+
+    .status-chip.good { background: #f0ffe0; color: #3a6e00; }
+    .status-chip.warn { background: #fff8e0; color: #8a6000; }
+    .status-chip.bad  { background: #fff0f0; color: #a00000; }
+
+    /* marks card */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      animation: slideUp 0.4s 0.15s ease both;
+    }
+
+    .card-head {
+      padding: 1.2rem 1.5rem; background: var(--cream);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .card-head-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem; font-weight: 700; letter-spacing: -0.02em;
+    }
+
+    .count-badge {
+      font-size: 0.7rem; color: var(--muted);
+      background: var(--paper); border: 1px solid var(--border);
+      padding: 3px 10px; border-radius: 100px;
+    }
+
+    .marks-table { width: 100%; border-collapse: collapse; }
+
+    .marks-table th {
+      font-size: 0.65rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+      text-align: left; padding: 12px 20px 10px; font-weight: 500;
+    }
+
+    .marks-table td {
+      padding: 12px 20px; font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .score-bar-wrap {
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .score-bar {
+      width: 60px; height: 5px;
+      background: var(--cream); border-radius: 100px; overflow: hidden;
+    }
+
+    .score-bar-fill { height: 100%; border-radius: 100px; }
+
+    .grade-badge {
+      display: inline-flex; align-items: center;
+      border-radius: 6px; padding: 3px 10px;
+      font-size: 0.76rem; font-weight: 500;
+    }
+
+    .grade-A  { background: #f0ffe0; color: #3a6e00; }
+    .grade-B  { background: #e8f4ff; color: #1a5a99; }
+    .grade-C  { background: #fff8e0; color: #8a6000; }
+    .grade-D  { background: #fff0e0; color: #8a4000; }
+    .grade-F  { background: #fff0f0; color: #a00000; }
+
+    .del-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 7px; padding: 4px 10px;
+      font-family: 'DM Mono', monospace; font-size: 0.7rem;
+      color: var(--danger); cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .del-btn:hover { background: #fff0f0; border-color: var(--danger); }
+
+    .empty-marks {
+      padding: 3rem; text-align: center;
+      color: var(--muted); font-size: 0.82rem;
+    }
+
+    /* add mark form */
+    .add-mark-zone {
+      padding: 1.2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      background: var(--cream);
+    }
+
+    .add-mark-form-inner {
+      display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
+    }
+
+    .add-field { display: flex; flex-direction: column; gap: 6px; }
+
+    .add-label {
+      font-size: 0.65rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    .add-input {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 9px 13px;
+      color: var(--ink); font-family: 'DM Mono', monospace;
+      font-size: 0.88rem; outline: none; transition: border-color 0.2s;
+    }
+
+    .add-input:focus { border-color: var(--ink); }
+    .add-input::placeholder { color: var(--muted); }
+
+    .add-mark-btn {
+      background: var(--ink); color: var(--accent);
+      border: none; border-radius: 10px;
+      padding: 10px 20px;
+      font-family: 'Syne', sans-serif; font-size: 0.88rem;
+      font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s; white-space: nowrap;
+      align-self: flex-end;
+    }
+
+    .add-mark-btn:hover { opacity: 0.75; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 820px) {
+      header { padding: 1.2rem 1.5rem; }
+      main { padding: 2rem 1rem 4rem; }
+      .edit-grid { grid-template-columns: 1fr; }
+      .edit-panel { position: static; }
+      .overview-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2L2 6l8 4 8-4-8-4zM2 10l8 4 8-4M2 14l8 4 8-4"
+              stroke="#c8f135" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="logo-text">Edu<span>Track</span></span>
+  </div>
+  <div class="header-right">
+    <span class="header-badge">Admin Portal</span>
+    <a href="/logout" class="signout-link">Sign out</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="breadcrumb">
+    <a href="/">← Dashboard</a>
+    <span>/</span>
+    <span>{{ student.name }}</span>
+  </div>
+
+  <div class="student-hero">
+    <div class="hero-avatar">{{ student.name[:2]|upper }}</div>
+    <div>
+      <div class="hero-name">{{ student.name }}</div>
+      <div class="hero-meta">
+        ID · {{ "%03d"|format(student.id) }}
+        {% if student.department %} · {{ student.department }}{% endif %}
+        {% if student.major %} · {{ student.major }}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="edit-grid">
+
+    <!-- ── LEFT: Edit Form ── -->
+    <div class="edit-panel">
+      <form action="/student/{{ student.id }}/update" method="post">
+
+        <p class="section-label">Personal Info</p>
+
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" name="name"
+                 value="{{ student.name }}" required autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input class="form-input" type="number" name="age"
+                 value="{{ student.age }}" min="5" max="99" required/>
+        </div>
+
+        <p class="section-label">Academic Info</p>
+
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input class="form-input" type="text" name="department"
+                 value="{{ student.department or '' }}"
+                 placeholder="e.g. Computer Science"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Major</label>
+          <input class="form-input" type="text" name="major"
+                 value="{{ student.major or '' }}"
+                 placeholder="e.g. Artificial Intelligence"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Minor</label>
+          <input class="form-input" type="text" name="minor"
+                 value="{{ student.minor or '' }}"
+                 placeholder="e.g. Mathematics"/>
+        </div>
+
+        <p class="section-label">Attendance</p>
+
+        <div class="att-row">
+          <input class="form-input att-number" type="number" name="attendance"
+                 id="attendance" value="{{ student.attendance|int }}"
+                 min="0" max="100" placeholder="0"/>
+          <div class="att-bar-wrap">
+            <div class="att-bar-fill" id="att-fill"></div>
+          </div>
+          <span class="att-pct" id="att-pct">0%</span>
+        </div>
+
+        <button class="save-btn" type="submit">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+            <path d="M2 8l4 4 7-7" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Save Changes
+        </button>
+
+      </form>
+    </div>
+
+    <!-- ── RIGHT: Stats + Marks ── -->
+    <div class="right-col">
+
+      <div class="overview-row">
+        <div class="overview-stat">
+          <span class="ov-label">Subjects</span>
+          <span class="ov-value">{{ marks|length }}</span>
+        </div>
+        <div class="overview-stat">
+          <span class="ov-label">Avg Score</span>
+          <span class="ov-value">
+            {% if marks %}
+              {{ "%.1f"|format(marks|sum(attribute='score') / marks|length) }}
+            {% else %}—{% endif %}
+          </span>
+        </div>
+        <div class="overview-stat">
+          <span class="ov-label">Status</span>
+          <span class="ov-value" style="font-size:1rem; padding-top:0.3rem;">
+            {% if student.attendance >= 75 %}
+              <span class="status-chip good">On Track</span>
+            {% elif student.attendance >= 50 %}
+              <span class="status-chip warn">At Risk</span>
+            {% else %}
+              <span class="status-chip bad">Critical</span>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-title">Marks &amp; Grades</span>
+          <span class="count-badge">{{ marks|length }} subject{{ 's' if marks|length != 1 else '' }}</span>
+        </div>
+
+        {% if marks %}
+        <table class="marks-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Score</th>
+              <th>Grade</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for mark in marks %}
+            {% set s = mark.score %}
+            <tr>
+              <td>{{ mark.subject }}</td>
+              <td>
+                <div class="score-bar-wrap">
+                  <div class="score-bar">
+                    <div class="score-bar-fill" style="width:{{ s }}%; background:{{ '#c8f135' if s >= 75 else '#fac775' if s >= 50 else '#ff4444' }};"></div>
+                  </div>
+                  {{ s|int }}<span style="color:var(--muted); font-size:0.72rem;">/100</span>
+                </div>
+              </td>
+              <td>
+                <span class="grade-badge {{ 'grade-A' if s >= 80 else 'grade-B' if s >= 70 else 'grade-C' if s >= 60 else 'grade-D' if s >= 50 else 'grade-F' }}">
+                  {{ 'A+' if s >= 90 else 'A' if s >= 80 else 'B' if s >= 70 else 'C' if s >= 60 else 'D' if s >= 50 else 'F' }}
+                </span>
+              </td>
+              <td>
+                <form action="/student/{{ student.id }}/marks/delete/{{ mark.id }}"
+                      method="post" style="display:inline">
+                  <button class="del-btn" type="submit">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-marks">No marks added yet — use the form below to add subjects.</div>
+        {% endif %}
+
+        <div class="add-mark-zone">
+          <form action="/student/{{ student.id }}/marks/add" method="post">
+            <div class="add-mark-form-inner">
+              <div class="add-field" style="flex:2; min-width:140px;">
+                <label class="add-label">Subject</label>
+                <input class="add-input" type="text" name="subject"
+                       placeholder="e.g. Mathematics" required autocomplete="off"/>
+              </div>
+              <div class="add-field" style="flex:1; min-width:90px;">
+                <label class="add-label">Score /100</label>
+                <input class="add-input" type="number" name="score"
+                       min="0" max="100" placeholder="85" required/>
+              </div>
+              <button class="add-mark-btn" type="submit">+ Add</button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  const attInput = document.getElementById('attendance');
+  const attFill  = document.getElementById('att-fill');
+  const attPct   = document.getElementById('att-pct');
+
+  function updateBar() {
+    const v = Math.min(100, Math.max(0, parseFloat(attInput.value) || 0));
+    attFill.style.width      = v + '%';
+    attPct.textContent       = Math.round(v) + '%';
+    attFill.style.background = v >= 75 ? '#c8f135' : v >= 50 ? '#fac775' : '#ff4444';
+    attPct.style.color       = v >= 75 ? '#c8f135' : v >= 50 ? '#fac775' : '#ff4444';
+  }
+
+  attInput.addEventListener('input', updateBar);
+  updateBar();
+</script>
+
+</body>
+</html>

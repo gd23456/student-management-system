@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduTrack — Student Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #0d0d0d;
+      --paper: #f5f2eb;
+      --cream: #ede9df;
+      --accent: #c8f135;
+      --accent-dark: #9abf1e;
+      --muted: #8a8678;
+      --border: #d4cfc3;
+      --card: #ffffff;
+      --danger: #ff4444;
+      --radius: 16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: 0.4;
+    }
+
+    header {
+      padding: 2rem 3rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--paper);
+      position: sticky; top: 0; z-index: 100;
+    }
+
+    .logo { display: flex; align-items: center; gap: 12px; }
+
+    .logo-mark {
+      width: 38px; height: 38px; background: var(--ink);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 1.3rem; letter-spacing: -0.03em;
+    }
+
+    .logo-text span { color: var(--accent-dark); }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+
+    .header-badge {
+      font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      background: var(--accent); color: var(--ink);
+      padding: 6px 14px; border-radius: 100px;
+    }
+
+    .signout-link {
+      font-size: 0.75rem; color: var(--muted);
+      text-decoration: none; letter-spacing: 0.06em; transition: color 0.2s;
+    }
+
+    .signout-link:hover { color: var(--ink); }
+
+    main {
+      max-width: 1200px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+      position: relative; z-index: 1;
+    }
+
+    /* ── STATS ── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      margin-bottom: 3rem;
+      animation: slideUp 0.5s ease both;
+    }
+
+    .stat-card {
+      background: var(--card); padding: 2rem 2.5rem;
+      display: flex; flex-direction: column; gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .stat-card:hover { background: var(--cream); }
+
+    .stat-label {
+      font-size: 0.7rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.8rem; font-weight: 800;
+      letter-spacing: -0.04em; line-height: 1;
+    }
+
+    .stat-sub { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── LAYOUT ── */
+    .content-grid {
+      display: grid; grid-template-columns: 400px 1fr;
+      gap: 2rem; align-items: start;
+    }
+
+    /* ── ADD PANEL ── */
+    .add-panel {
+      background: var(--ink); color: var(--paper);
+      border-radius: var(--radius); padding: 2.5rem;
+      animation: slideUp 0.5s 0.1s ease both;
+      position: sticky; top: 90px;
+    }
+
+    .panel-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem; font-weight: 700;
+      letter-spacing: -0.03em; margin-bottom: 0.4rem;
+    }
+
+    .panel-sub { font-size: 0.75rem; color: #888; margin-bottom: 2rem; }
+
+    .form-section-divider {
+      font-size: 0.62rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: #555;
+      margin: 1.6rem 0 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .form-group { margin-bottom: 1rem; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+
+    .form-label {
+      display: block; font-size: 0.68rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #888; margin-bottom: 7px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; padding: 11px 14px;
+      color: var(--paper);
+      font-family: 'DM Mono', monospace; font-size: 0.88rem;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+    }
+
+    .form-input::placeholder { color: #555; }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      background: rgba(200,241,53,0.05);
+    }
+
+    .submit-btn {
+      width: 100%; background: var(--accent); color: var(--ink);
+      border: none; border-radius: 10px; padding: 14px;
+      font-family: 'Syne', sans-serif; font-size: 0.95rem;
+      font-weight: 700; letter-spacing: 0.02em; cursor: pointer;
+      margin-top: 1.2rem; transition: transform 0.15s, background 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+
+    .submit-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+
+    /* ── LIST PANEL ── */
+    .list-panel { animation: slideUp 0.5s 0.2s ease both; }
+
+    .list-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 1.2rem;
+      flex-wrap: wrap; gap: 10px;
+    }
+
+    .list-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem; font-weight: 700; letter-spacing: -0.03em;
+    }
+
+    .search-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 9px 14px;
+      font-family: 'DM Mono', monospace; font-size: 0.8rem;
+      outline: none; color: var(--ink);
+      transition: border-color 0.2s; width: 200px;
+    }
+
+    .search-box:focus { border-color: var(--ink); }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr { background: var(--cream); border-bottom: 1px solid var(--border); }
+
+    th {
+      padding: 13px 18px; font-size: 0.62rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); text-align: left; font-weight: 500;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      animation: rowIn 0.3s ease both;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--cream); }
+
+    td { padding: 13px 18px; font-size: 0.84rem; vertical-align: middle; }
+
+    .id-cell { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+
+    .name-cell {
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--ink); color: var(--accent);
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.68rem; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .student-name { font-weight: 500; white-space: nowrap; }
+
+    .age-badge {
+      display: inline-flex; align-items: center;
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: 100px; padding: 3px 10px;
+      font-size: 0.76rem; white-space: nowrap;
+    }
+
+    .dept-stack { display: flex; flex-direction: column; gap: 2px; }
+    .dept-name  { font-size: 0.82rem; font-weight: 500; }
+    .dept-sub   { font-size: 0.7rem; color: var(--muted); }
+
+    .att-mini   { display: flex; align-items: center; gap: 8px; }
+
+    .att-mini-bar {
+      width: 48px; height: 4px;
+      background: var(--cream); border-radius: 100px; overflow: hidden;
+    }
+
+    .att-mini-fill { height: 100%; border-radius: 100px; }
+
+    .att-mini-text { font-size: 0.76rem; color: var(--muted); white-space: nowrap; }
+
+    .actions-cell { display: flex; align-items: center; gap: 6px; }
+
+    .edit-btn {
+      display: inline-flex; align-items: center;
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 13px;
+      font-family: 'DM Mono', monospace; font-size: 0.72rem;
+      cursor: pointer; color: var(--ink); text-decoration: none;
+      transition: background 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+
+    .edit-btn:hover { background: var(--cream); border-color: var(--ink); }
+
+    .action-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 13px;
+      font-family: 'DM Mono', monospace; font-size: 0.72rem;
+      cursor: pointer; color: var(--danger); white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .action-btn:hover { background: #fff0f0; border-color: var(--danger); }
+
+    .empty-state { padding: 4rem 2rem; text-align: center; }
+    .empty-icon  { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+
+    .empty-text {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem; font-weight: 600; color: var(--muted);
+    }
+
+    .empty-sub { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+
+    .flash {
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 0.82rem; margin-bottom: 1.5rem; border: 1px solid;
+    }
+
+    .flash.success { background: #f0ffe0; border-color: #b5e87a; color: #3a6e00; }
+    .flash.error   { background: #fff0f0; border-color: #ffaaaa; color: #a00000; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes rowIn {
+      from { opacity: 0; transform: translateX(-6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    @media (max-width: 900px) {
+      header { padding: 1.2rem 1.5rem; }
+      main { padding: 2rem 1rem 4rem; }
+      .stats-row { grid-template-columns: 1fr; }
+      .content-grid { grid-template-columns: 1fr; }
+      .add-panel { position: static; }
+      .search-box { width: 140px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2L2 6l8 4 8-4-8-4zM2 10l8 4 8-4M2 14l8 4 8-4"
+              stroke="#c8f135" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="logo-text">Edu<span>Track</span></span>
+  </div>
+  <div class="header-right">
+    <span class="header-badge">v1.0 · Live</span>
+    <a href="/logout" class="signout-link">Sign out</a>
+  </div>
+</header>
+
+<main>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-label">Total Students</span>
+      <span class="stat-value">{{ students|length }}</span>
+      <span class="stat-sub">Enrolled this session</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Avg. Age</span>
+      <span class="stat-value">
+        {% if students %}
+          {{ "%.0f"|format(students|map(attribute=2)|sum / students|length) }}
+        {% else %}—{% endif %}
+      </span>
+      <span class="stat-sub">Years old</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Last Added</span>
+      <span class="stat-value" style="font-size:1.4rem; padding-top:0.4rem;">
+        {% if students %}{{ students[-1][1].split()[0] }}{% else %}—{% endif %}
+      </span>
+      <span class="stat-sub">Most recent entry</span>
+    </div>
+  </div>
+
+  <div class="content-grid">
+
+    <!-- Add Student -->
+    <div class="add-panel">
+      <p class="panel-title">Add Student</p>
+      <p class="panel-sub">Fill in all details to enroll a new student</p>
+
+      <form action="/add" method="post">
+
+        <p class="form-section-divider">Personal Info</p>
+
+        <div class="form-row">
+          <div>
+            <label class="form-label" for="name">Full Name</label>
+            <input class="form-input" type="text" name="name" id="name"
+                   placeholder="e.g. Priya Sharma" required autocomplete="off"/>
+          </div>
+          <div>
+            <label class="form-label" for="age">Age</label>
+            <input class="form-input" type="number" name="age" id="age"
+                   placeholder="21" min="5" max="99" required/>
+          </div>
+        </div>
+
+        <p class="form-section-divider">Academic Info</p>
+
+        <div class="form-group">
+          <label class="form-label" for="department">Department</label>
+          <input class="form-input" type="text" name="department" id="department"
+                 placeholder="e.g. Computer Science" autocomplete="off"/>
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label class="form-label" for="major">Major</label>
+            <input class="form-input" type="text" name="major" id="major"
+                   placeholder="e.g. AI & ML" autocomplete="off"/>
+          </div>
+          <div>
+            <label class="form-label" for="minor">Minor</label>
+            <input class="form-input" type="text" name="minor" id="minor"
+                   placeholder="e.g. Mathematics" autocomplete="off"/>
+          </div>
+        </div>
+
+        <p class="form-section-divider">Attendance</p>
+
+        <div class="form-group">
+          <label class="form-label" for="attendance">Attendance %</label>
+          <input class="form-input" type="number" name="attendance" id="attendance"
+                 placeholder="0 – 100" min="0" max="100" value="0"/>
+        </div>
+
+        <button class="submit-btn" type="submit">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Enroll Student
+        </button>
+      </form>
+    </div>
+
+    <!-- Student List -->
+    <div class="list-panel">
+      <div class="list-header">
+        <h2 class="list-title">Students</h2>
+        <input class="search-box" type="text" id="search"
+               placeholder="Search name…" oninput="filterTable()"/>
+      </div>
+
+      <div class="table-wrap">
+        {% if students %}
+        <table id="student-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Age</th>
+              <th>Department · Major · Minor</th>
+              <th>Attendance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr style="animation-delay: {{ loop.index0 * 0.05 }}s">
+              <td class="id-cell">{{ "%03d"|format(s[0]) }}</td>
+              <td>
+                <div class="name-cell">
+                  <div class="avatar">{{ s[1][:2]|upper }}</div>
+                  <!-- ↓ ADDED: onclick to open card -->
+                  <span class="student-name" onclick="openCard({{ s[0] }})" style="cursor:pointer; text-decoration: underline dotted var(--muted); text-underline-offset: 3px;">{{ s[1] }}</span>
+                </div>
+              </td>
+              <td><span class="age-badge">{{ s[2] }} yrs</span></td>
+              <td>
+                <div class="dept-stack">
+                  <span class="dept-name">{{ s[3] if s[3] else '—' }}</span>
+                  {% if s[5] %}<span class="dept-sub">Major · {{ s[5] }}</span>{% endif %}
+                  {% if s[6] %}<span class="dept-sub">Minor · {{ s[6] }}</span>{% endif %}
+                </div>
+              </td>
+              <td>
+                {% set att = (s[4] or 0)|float %}
+                <div class="att-mini">
+                  <div class="att-mini-bar">
+                    <div class="att-mini-fill" style="width:{{ att }}%; background:{{ '#9abf1e' if att >= 75 else '#fac775' if att >= 50 else '#ff4444' }};"></div>
+                  </div>
+                  <span class="att-mini-text">{{ att|int }}%</span>
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <a href="/student/{{ s[0] }}" class="edit-btn">Edit</a>
+                  <form action="/delete/{{ s[0] }}" method="post" style="display:inline"
+                        onsubmit="return confirm('Remove {{ s[1] }}?')">
+                    <button class="action-btn" type="submit">Remove</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p class="empty-text">No students yet</p>
+          <p class="empty-sub">Add your first student using the form on the left</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+function filterTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('#student-table tbody tr').forEach(row => {
+    const name = row.querySelector('.student-name')?.textContent?.toLowerCase() || '';
+    row.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+</script>
+
+<!-- ── ADDED: STUDENT CARD MODAL ── -->
+<div id="card-overlay" onclick="closeCard()" style="
+  display:none; position:fixed; inset:0;
+  background:rgba(13,13,13,0.55); z-index:900;
+  backdrop-filter: blur(4px);
+"></div>
+
+<div id="student-card" style="
+  display:none; position:fixed;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  width:min(580px, 95vw); max-height:85vh;
+  background:var(--card); border-radius:var(--radius);
+  border:1px solid var(--border);
+  z-index:901; overflow:hidden;
+  flex-direction:column;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+">
+  <!-- Card Header -->
+  <div id="card-header" style="
+    background:var(--ink); padding:2rem 2rem 1.5rem;
+    display:flex; align-items:center; gap:1.2rem; flex-shrink:0;
+  ">
+    <div id="card-avatar" style="
+      width:56px; height:56px; border-radius:50%;
+      background:var(--accent); color:var(--ink);
+      font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    "></div>
+    <div style="flex:1; min-width:0;">
+      <div id="card-name" style="
+        font-family:'Syne',sans-serif; font-weight:800;
+        font-size:1.5rem; letter-spacing:-0.03em; color:var(--paper);
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      "></div>
+      <div id="card-meta" style="font-size:0.75rem; color:#888; margin-top:4px;"></div>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+      <a id="card-edit-link" href="#" style="
+        font-family:'DM Mono',monospace; font-size:0.72rem;
+        background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+        color:var(--paper); text-decoration:none;
+        padding:6px 14px; border-radius:8px; transition:background 0.2s;
+      " onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+         onmouseout="this.style.background='rgba(255,255,255,0.08)'">Edit</a>
+      <button onclick="closeCard()" style="
+        background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+        color:var(--paper); width:32px; height:32px;
+        border-radius:8px; cursor:pointer; font-size:1rem;
+        display:flex; align-items:center; justify-content:center;
+        transition:background 0.2s;
+      " onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+         onmouseout="this.style.background='rgba(255,255,255,0.08)'">✕</button>
+    </div>
+  </div>
+
+  <!-- Stats Strip -->
+  <div id="card-stats" style="
+    display:grid; grid-template-columns:repeat(3,1fr);
+    gap:1px; background:var(--border); flex-shrink:0;
+  "></div>
+
+  <!-- Scrollable Body -->
+  <div style="overflow-y:auto; flex:1;">
+
+    <!-- Academic Info -->
+    <div style="padding:1.5rem 2rem; border-bottom:1px solid var(--border);">
+      <p style="font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase;
+                color:var(--muted); margin-bottom:1rem;">Academic Details</p>
+      <div id="card-academic" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;"></div>
+    </div>
+
+    <!-- Marks -->
+    <div style="padding:1.5rem 2rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+        <p style="font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted);">
+          Marks &amp; Grades
+        </p>
+        <span id="card-marks-count" style="
+          font-size:0.7rem; color:var(--muted);
+          background:var(--cream); border:1px solid var(--border);
+          padding:2px 10px; border-radius:100px;
+        "></span>
+      </div>
+      <div id="card-marks"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function openCard(id) {
+  fetch('/student/' + id + '/card')
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('card-avatar').textContent = d.name.slice(0,2).toUpperCase();
+      document.getElementById('card-name').textContent   = d.name;
+      document.getElementById('card-meta').textContent   =
+        'ID · ' + String(d.id).padStart(3,'0') +
+        (d.department ? ' · ' + d.department : '');
+      document.getElementById('card-edit-link').href = '/student/' + d.id;
+
+      const att      = d.attendance;
+      const avgScore = d.marks.length
+        ? (d.marks.reduce((a,m) => a + m.score, 0) / d.marks.length).toFixed(1)
+        : null;
+      const attColor  = att >= 75 ? '#9abf1e' : att >= 50 ? '#fac775' : '#ff4444';
+      const status    = att >= 75 ? 'On Track' : att >= 50 ? 'At Risk' : 'Critical';
+      const statusBg  = att >= 75 ? '#f0ffe0'  : att >= 50 ? '#fff8e0' : '#fff0f0';
+      const statusClr = att >= 75 ? '#3a6e00'  : att >= 50 ? '#8a6000' : '#a00000';
+
+      document.getElementById('card-stats').innerHTML = `
+        <div style="background:var(--card); padding:1.2rem 1.5rem;">
+          <div style="font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">Attendance</div>
+          <div style="font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-0.03em; color:${attColor};">${Math.round(att)}%</div>
+        </div>
+        <div style="background:var(--card); padding:1.2rem 1.5rem; border-left:1px solid var(--border); border-right:1px solid var(--border);">
+          <div style="font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">Avg Score</div>
+          <div style="font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-0.03em;">${avgScore !== null ? avgScore : '—'}</div>
+        </div>
+        <div style="background:var(--card); padding:1.2rem 1.5rem;">
+          <div style="font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">Status</div>
+          <span style="background:${statusBg}; color:${statusClr}; font-size:0.74rem; padding:4px 12px; border-radius:100px;">${status}</span>
+        </div>
+      `;
+
+      document.getElementById('card-academic').innerHTML = [
+        ['Department', d.department || '—'],
+        ['Major',      d.major      || '—'],
+        ['Minor',      d.minor      || '—'],
+      ].map(([label, val]) => `
+        <div>
+          <div style="font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">${label}</div>
+          <div style="font-size:0.84rem; font-weight:500;">${val}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('card-marks-count').textContent =
+        d.marks.length + ' subject' + (d.marks.length !== 1 ? 's' : '');
+
+      document.getElementById('card-marks').innerHTML = d.marks.length === 0
+        ? '<div style="text-align:center; padding:2rem; color:var(--muted); font-size:0.82rem;">No marks recorded yet.</div>'
+        : d.marks.map(m => {
+            const s        = m.score;
+            const barColor = s >= 75 ? '#9abf1e' : s >= 50 ? '#fac775' : '#ff4444';
+            const grade    = s >= 90 ? 'A+' : s >= 80 ? 'A' : s >= 70 ? 'B' : s >= 60 ? 'C' : s >= 50 ? 'D' : 'F';
+            const gradeBg  = s >= 80 ? '#f0ffe0' : s >= 70 ? '#e8f4ff' : s >= 60 ? '#fff8e0' : s >= 50 ? '#fff0e0' : '#fff0f0';
+            const gradeClr = s >= 80 ? '#3a6e00' : s >= 70 ? '#1a5a99' : s >= 60 ? '#8a6000' : s >= 50 ? '#8a4000' : '#a00000';
+            return `
+              <div style="display:flex; align-items:center; gap:12px;
+                          padding:10px 0; border-bottom:1px solid var(--border);">
+                <span style="flex:1; font-size:0.84rem;">${m.subject}</span>
+                <div style="width:80px; height:4px; background:var(--cream); border-radius:100px; overflow:hidden; flex-shrink:0;">
+                  <div style="width:${s}%; height:100%; background:${barColor}; border-radius:100px;"></div>
+                </div>
+                <span style="font-size:0.8rem; color:var(--muted); min-width:36px; text-align:right;">${Math.round(s)}</span>
+                <span style="background:${gradeBg}; color:${gradeClr}; font-size:0.72rem;
+                             padding:3px 10px; border-radius:6px; font-weight:500;">${grade}</span>
+              </div>
+            `;
+          }).join('');
+
+      document.getElementById('card-overlay').style.display = 'block';
+      document.getElementById('student-card').style.display = 'flex';
+    });
+}
+
+function closeCard() {
+  document.getElementById('card-overlay').style.display = 'none';
+  document.getElementById('student-card').style.display = 'none';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
+</script>
+
+</body>
+</html>
